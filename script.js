@@ -20,6 +20,15 @@
 
 var ul = document.getElementById('list');
 var li;
+var todoIdSeq = 0;
+
+var existingBoxes = document.querySelectorAll('#list input[type="checkbox"]');
+for (var i = 0; i < existingBoxes.length; i++) {
+    var match = /^todo-(\d+)$/.exec(existingBoxes[i].id);
+    if (match) {
+        todoIdSeq = Math.max(todoIdSeq, parseInt(match[1], 10));
+    }
+}
 
 var addButton = document.getElementById('add')
 addButton.addEventListener('click', addItem)
@@ -30,22 +39,12 @@ removeButton.addEventListener('click', removeItem)
 var removeAllButton = document.getElementById('removeall')
 removeAllButton.addEventListener('click', removeAllItem)
 
-
-
+function nextTodoId() {
+    todoIdSeq += 1;
+    return 'todo-' + todoIdSeq;
+}
 
 function addItem(){
-    // var myTodo = document.getElementById('input').value;
-    // li = document.createElement('li');
-    // li.setAttribute('class', 'mycheck')
-    // input = document.createElement('input')
-    // input.setAttribute('type', 'checkbox')
-    // input.setAttribute('id', 'check')
-    // label = document.createElement('label')
-    // label.textContent = myTodo
-    // ul.insertBefore(li, ul.childNodes[0])
-    // input.appendChild(label)
-    // li.appendChild(input)
-
     var input = document.getElementById('input')
     var item = input.value;
     ul = document.getElementById('list');
@@ -53,14 +52,14 @@ function addItem(){
     if (item === '') {
         return false;
     } else {
-        li = document.createElement('list');
+        var checkboxId = nextTodoId();
+        li = document.createElement('li');
         var checkbox = document.createElement('input')
         checkbox.type ='checkbox';
-        checkbox.setAttribute('id', 'check');
+        checkbox.setAttribute('id', checkboxId);
         var label = document.createElement('label');
-        label.setAttribute('for', 'item');
+        label.setAttribute('for', checkboxId);
 
-        ul.appendChild(label);
         li.appendChild(checkbox);
         label.appendChild(textnode);
         li.appendChild(label);
