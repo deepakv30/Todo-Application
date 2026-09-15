@@ -55,7 +55,7 @@ body{
     outline: 0;
 }
 
-#container ul li input[type="checkbox"]:checked:after {
+#container ul li input[type="checkbox"]:checked::after {
     content: '\2714';
     font-size: 20px;
     position: absolute;

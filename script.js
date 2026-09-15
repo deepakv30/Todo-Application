@@ -1,91 +1,176 @@
-
-
-// // Adding item in todo list
-// document.querySelector('#myTodo').addEventListener('submit', (event)=>{
-//     let myValue = event.target.newTodo.textContent
-//     console.log(myValue)
-// })
-// function addTodo(){
-//     // Create a new p tag //
-//     const newTodo = document.createElement('p')
-//     newTodo.textcontent = document.getElementById('myTodo').value
-//     document.querySelector('#list').appendChild(newTodo)
-//     console.log(newTodo)
-// }
-
-// var h = document.createElement('h1')
-// var myValue = document.createTextNode('Hello World!')
-// h.appendChild(myValue)
-// document.querySelector('h1').appendChild(h)
-
+var STORAGE_KEY = 'todo-application-items';
 var ul = document.getElementById('list');
-var li;
-var todoIdSeq = 0;
+var todoIdCounter = 0;
 
-var existingBoxes = document.querySelectorAll('#list input[type="checkbox"]');
-for (var i = 0; i < existingBoxes.length; i++) {
-    var match = /^todo-(\d+)$/.exec(existingBoxes[i].id);
-    if (match) {
-        todoIdSeq = Math.max(todoIdSeq, parseInt(match[1], 10));
+var addButton = document.getElementById('add');
+addButton.addEventListener('click', addItem);
+
+var removeButton = document.getElementById('remove');
+removeButton.addEventListener('click', removeItem);
+
+var removeAllButton = document.getElementById('removeall');
+removeAllButton.addEventListener('click', removeAllItem);
+
+ul.addEventListener('change', function (event) {
+    if (event.target && event.target.matches('input[type="checkbox"]')) {
+        saveTodos();
     }
-}
-
-var addButton = document.getElementById('add')
-addButton.addEventListener('click', addItem)
-
-var removeButton = document.getElementById('remove')
-removeButton.addEventListener('click', removeItem)
-
-var removeAllButton = document.getElementById('removeall')
-removeAllButton.addEventListener('click', removeAllItem)
+});
 
 function nextTodoId() {
-    todoIdSeq += 1;
-    return 'todo-' + todoIdSeq;
+    todoIdCounter += 1;
+    return 'todo-' + todoIdCounter;
 }
 
-function addItem(){
-    var input = document.getElementById('input')
-    var item = input.value;
-    ul = document.getElementById('list');
-    var textnode = document.createTextNode(item);
-    if (item === '') {
-        return false;
-    } else {
-        var checkboxId = nextTodoId();
-        li = document.createElement('li');
-        var checkbox = document.createElement('input')
-        checkbox.type ='checkbox';
-        checkbox.setAttribute('id', checkboxId);
-        var label = document.createElement('label');
-        label.setAttribute('for', checkboxId);
-
-        li.appendChild(checkbox);
-        label.appendChild(textnode);
-        li.appendChild(label);
-        ul.insertBefore(li, ul.childNodes[0]);
-    }
-
-    setTimeout(() => {
-        li.className = 'visual';
-    }, 2);
-    input.value ='';
-}
-
-function removeItem(){
-    li = ul.children
-    for (let index = 0; index < li.length; index++) {
-        while(li[index] && li[index].children[0].checked){
-            ul.removeChild(li[index])
-        }     
-    }
-}
-
-function removeAllItem(){
-    li = ul.children
-    for (let index = 0; index < li.length; index++) {
-        while(li[index] && li[index].children[0]){
-            ul.removeChild(li[index])
+function ensureCounterPast(id) {
+    var match = /^todo-(\d+)$/.exec(id || '');
+    if (match) {
+        var n = parseInt(match[1], 10);
+        if (n > todoIdCounter) {
+            todoIdCounter = n;
         }
     }
 }
+
+function createTodoElement(todo) {
+    var id = todo.id || nextTodoId();
+    ensureCounterPast(id);
+
+    var li = document.createElement('li');
+    li.className = 'mycheck visual';
+
+    var checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = id;
+    checkbox.checked = !!todo.checked;
+
+    var label = document.createElement('label');
+    label.setAttribute('for', id);
+    label.appendChild(document.createTextNode(todo.text));
+
+    li.appendChild(checkbox);
+    li.appendChild(label);
+    return li;
+}
+
+function readTodosFromDom() {
+    var items = [];
+    var children = ul.children;
+    for (var i = 0; i < children.length; i++) {
+        var li = children[i];
+        var checkbox = li.querySelector('input[type="checkbox"]');
+        var label = li.querySelector('label');
+        if (!checkbox || !label) {
+            continue;
+        }
+        ensureCounterPast(checkbox.id);
+        items.push({
+            id: checkbox.id || nextTodoId(),
+            text: label.textContent,
+            checked: checkbox.checked
+        });
+    }
+    return items;
+}
+
+function renderTodos(todos) {
+    while (ul.firstChild) {
+        ul.removeChild(ul.firstChild);
+    }
+    for (var i = 0; i < todos.length; i++) {
+        ul.appendChild(createTodoElement(todos[i]));
+    }
+}
+
+function saveTodos() {
+    try {
+        var todos = readTodosFromDom();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    } catch (err) {
+        // Quota or private mode — keep UI working without persistence.
+    }
+}
+
+function loadTodos() {
+    try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            return null;
+        }
+        var parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+            return null;
+        }
+        return parsed.map(function (item, index) {
+            return {
+                id: item.id || ('todo-' + (index + 1)),
+                text: String(item.text != null ? item.text : ''),
+                checked: !!item.checked
+            };
+        }).filter(function (item) {
+            return item.text !== '';
+        });
+    } catch (err) {
+        return null;
+    }
+}
+
+function initTodos() {
+    var stored = loadTodos();
+    if (stored !== null) {
+        // Explicit empty array is a valid saved state after Remove All.
+        todoIdCounter = 0;
+        renderTodos(stored);
+        return;
+    }
+    // First visit: keep static markup defaults, normalize ids, then persist.
+    var seeded = readTodosFromDom();
+    if (seeded.length === 0) {
+        seeded = [
+            { id: 'todo-1', text: 'Wake up early', checked: false },
+            { id: 'todo-2', text: 'Go to gym', checked: true },
+            { id: 'todo-3', text: 'Complete javascript tutorial', checked: false }
+        ];
+    }
+    renderTodos(seeded);
+    saveTodos();
+}
+
+function addItem() {
+    var input = document.getElementById('input');
+    var item = input.value;
+    if (item === '') {
+        return false;
+    }
+
+    var li = createTodoElement({
+        id: nextTodoId(),
+        text: item,
+        checked: false
+    });
+    ul.insertBefore(li, ul.firstChild);
+    input.value = '';
+    saveTodos();
+}
+
+function removeItem() {
+    var children = ul.children;
+    for (var index = 0; index < children.length; index++) {
+        while (children[index] && children[index].children[0] && children[index].children[0].checked) {
+            ul.removeChild(children[index]);
+        }
+    }
+    saveTodos();
+}
+
+function removeAllItem() {
+    if (!window.confirm('Remove all todos? This cannot be undone.')) {
+        return;
+    }
+    while (ul.firstChild) {
+        ul.removeChild(ul.firstChild);
+    }
+    saveTodos();
+}
+
+initTodos();
