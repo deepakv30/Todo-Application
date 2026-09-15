@@ -1,15 +1,17 @@
 # Todo-Application — Spec index (AI-Native SDD)
 
-Specs driving the `fix/todo-a11y-persist` delivery. Implement to satisfy each file’s **Acceptance criteria** and **Invariants**.
+Specs for this repository. Implement to satisfy each file’s **Acceptance criteria** and **Invariants**.
 
-| Spec | Issue | Outcome |
-|------|-------|---------|
-| [01-a11y-labels-meta.md](./01-a11y-labels-meta.md) | #1 | Unique checkbox IDs + associated labels; clearer title + meta description |
-| [02-localstorage-persist.md](./02-localstorage-persist.md) | #2 | Persist todos (text + checked) in localStorage; confirm before Remove All |
+| Spec | Outcome |
+|------|---------|
+| [01-github-pages-ci.md](./01-github-pages-ci.md) | GitHub Pages via Actions + static CI sanity |
+| [01-a11y-labels-meta.md](./01-a11y-labels-meta.md) | Unique checkbox IDs + associated labels; clearer title + meta |
+| [02-localstorage-persist.md](./02-localstorage-persist.md) | Persist todos in localStorage; confirm before Remove All |
 
-## Delivery order
+## Delivery order (Pages + CI)
 
-1. Write/commit specs (this folder).
-2. Implement a11y labels/meta in `index.html`, `script.js`, and checkbox CSS selectors.
-3. Implement localStorage hydrate/save + Remove All confirm in `script.js`.
-4. Open one PR closing #1–#2; mirror the same app files to portfolio `Todo-Application/` on a separate HTTPS feature-branch PR when possible.
+1. Write/commit this Pages/CI spec and refresh the index.
+2. Add `ci.yml` and `pages.yml`.
+3. Create README pointing at `https://deepakv30.github.io/Todo-Application/`.
+4. Open PR on `chore/github-pages-ci` (do not merge until CI is green).
+5. Enable Pages (`build_type=workflow`) and set repo homepage.
